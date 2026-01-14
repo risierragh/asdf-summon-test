@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# -------- Parameters --------
+install_type="${ASDF_INSTALL_TYPE:-}"
+version="${ASDF_INSTALL_VERSION:-}"
+install_path="${ASDF_INSTALL_PATH:-}"
+download_path="${ASDF_DOWNLOAD_PATH:-}"
+
+# -------- Validation --------
+if [ "$install_type" != "version" ]; then
+  echo "asdf-summon supports release installs only" >&2
+  exit 1
+fi
+
+if [ -z "${version}" ] || [ -z "${install_path}" ] || [ -z "${ASDF_DOWNLOAD_PATH:-}" ]; then
+  echo "Missing ASDF_* env vars (ASDF_INSTALL_TYPE/ASDF_INSTALL_VERSION/ASDF_INSTALL_PATH/ASDF_DOWNLOAD_PATH)." >&2
+  exit 1
+fi
+
+# -------- Installation --------
+mkdir -p "${install_path}/bin"
+
+cp -f "${ASDF_DOWNLOAD_PATH}/summon" "${install_path}/bin/summon"
+cp -f "${ASDF_DOWNLOAD_PATH}/summon-conjur" "${install_path}/bin/summon-conjur"
+cp -f "${ASDF_DOWNLOAD_PATH}/conjur" "${install_path}/bin/conjur"
+
+chmod +x "${install_path}/bin/summon" "${install_path}/bin/summon-conjur" "${install_path}/bin/conjur"
+
+# -------- Sanity checks --------
+test -x "${install_path}/bin/summon"
+test -x "${install_path}/bin/summon-conjur"
+test -x "${install_path}/bin/conjur"
+
+echo "summon runtime ${version} installed successfully"

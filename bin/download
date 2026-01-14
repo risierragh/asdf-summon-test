@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# -------- PARAMETERS --------
+version="$1"
+download_path="$2"
+
+if [[ -z "$version" || -z "$download_path" ]]; then
+    echo "Usage: download <version> <download_path>"
+    exit 1
+fi
+
+# -------- PLATFORM --------
+# uname returns Linux or Darwin, which matches Cyberark release naming
+platform="$(uname | tr '[:upper:]' '[:lower:]')"
+case "$platform" in
+  linux|darwin) ;;
+  *)
+    echo "Unsupported platform: $platform" >&2
+    exit 1
+    ;;
+esac
+
+# -------- ARCH --------
+arch="$(uname -m)"
+case "$arch" in
+  x86_64) arch="amd64" ;;
+  arm64|aarch64) arch="arm64" ;;
+  *)
+    echo "Unsupported architecture: $arch" >&2
+    exit 1
+    ;;
+esac
+
+# -------- Versions --------
+summon_version="$version"
+summon_conjur_version="0.7.1"
+conjur_version="9.1.0"
+
+# -------- URLs --------
+summon_url="https://github.com/cyberark/summon/releases/download/v${summon_version}/summon-${platform}-${arch}.tar.gz"
+summon_conjur_url="https://github.com/cyberark/summon-conjur/releases/download/v${summon_conjur_version}/summon-conjur-${platform}-${arch}.tar.gz"
+conjur_url="https://github.com/cyberark/conjur-cli-go/releases/download/v${conjur_version}/conjur-cli_${conjur_version}_${platform}_${arch}.tar.gz"
+
+mkdir -p "$download_path"
+
+# -------- Helper function --------
+# Extracts a single binary from a tar.gz archive.
+# It fails if the binary is not found or if multiple matches exist.
+extract_binary_from_tar() {
+  local url="$1"
+  local binary_name="$2"
+  local destination="$3"
+
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  curl -fsSL "$url" | tar -xz -C "$tmp_dir"
+
+  local matches=()
+  while IFS= read -r file; do
+    matches+=("$file")
+  done < <(find "$tmp_dir" -type f -name "$binary_name")
+
+  if [[ "${#matches[@]}" -eq 0 ]]; then
+    echo "Binary '$binary_name' not found in $url" >&2
+    rm -rf "$tmp_dir"
+    exit 1
+  fi
+
+  if [[ "${#matches[@]}" -gt 1 ]]; then
+    echo "Multiple binaries named '$binary_name' found in $url" >&2
+    rm -rf "$tmp_dir"
+    exit 1
+  fi
+
+  mv "${matches[0]}" "$destination"
+  rm -rf "$tmp_dir"
+}
+
+# -------- summon --------
+echo "Downloading summon ${summon_version}"
+tmp_dir="$(mktemp -d)"
+curl -fsSL "$summon_url" | tar -xz -C "$tmp_dir"
+mv "$tmp_dir/summon" "$download_path/summon"
+rm -rf "$tmp_dir"
+
+# -------- summon-conjur --------
+echo "Downloading summon-conjur ${summon_conjur_version}"
+tmp_dir="$(mktemp -d)"
+curl -fsSL "$summon_conjur_url" | tar -xz -C "$tmp_dir"
+mv "$tmp_dir/summon-conjur" "$download_path/summon-conjur"
+rm -rf "$tmp_dir"
+
+# -------- conjur-cli --------
+echo "Downloading conjur-cli ${conjur_version}"
+extract_binary_from_tar "$conjur_url" "conjur" "$download_path/conjur"
+
+# -------- Sanity checks --------
+test -f "$download_path/summon" || { echo "summon binary not found" >&2; exit 1; }
+test -f "$download_path/summon-conjur" || { echo "summon-conjur binary not found" >&2; exit 1; }
+test -f "$download_path/conjur" || { echo "conjur binary not found" >&2; exit 1; }
+
+chmod +x \
+  "$download_path/summon" \
+  "$download_path/summon-conjur" \
+  "$download_path/conjur"
