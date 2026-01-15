@@ -3,8 +3,8 @@
 set -euo pipefail
 
 # -------- PARAMETERS --------
-version="$1"
-download_path="$2"
+version="${ASDF_INSTALL_VERSION:-${1:-}}"
+download_path="${ASDF_DOWNLOAD_PATH:-${2:-}}"
 
 if [[ -z "$version" || -z "$download_path" ]]; then
     echo "Usage: download <version> <download_path>"
