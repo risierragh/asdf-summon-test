@@ -23,14 +23,13 @@ fi
 mkdir -p "${install_path}/bin/Providers"
 
 cp -f "${ASDF_DOWNLOAD_PATH}/summon" "${install_path}/bin/summon"
-cp -f "${ASDF_DOWNLOAD_PATH}/summon-conjur" "${install_path}/bin/Providers/summon-conjur"
+cp -f "${ASDF_DOWNLOAD_PATH}/Providers/summon-conjur" "${install_path}/bin/Providers/summon-conjur"
 cp -f "${ASDF_DOWNLOAD_PATH}/conjur" "${install_path}/bin/conjur"
 
-chmod +x "${install_path}/bin/summon" "${install_path}/bin/summon-conjur" "${install_path}/bin/conjur"
+chmod +x "${install_path}/bin/summon" "${install_path}/bin/Providers/summon-conjur" "${install_path}/bin/conjur"
 
-# -------- Sanity checks --------
 test -x "${install_path}/bin/summon"
-test -x "${install_path}/bin/summon-conjur"
+test -x "${install_path}/bin/Providers/summon-conjur"
 test -x "${install_path}/bin/conjur"
 
 echo "summon runtime ${version} installed successfully"
