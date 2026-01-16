@@ -43,7 +43,7 @@ summon_url="https://github.com/cyberark/summon/releases/download/v${summon_versi
 summon_conjur_url="https://github.com/cyberark/summon-conjur/releases/download/v${summon_conjur_version}/summon-conjur-${platform}-${arch}.tar.gz"
 conjur_url="https://github.com/cyberark/conjur-cli-go/releases/download/v${conjur_version}/conjur-cli_${conjur_version}_${platform}_${arch}.tar.gz"
 
-mkdir -p "$download_path"
+mkdir -p "$download_path/Providers"
 
 # -------- Helper function --------
 # Extracts a single binary from a tar.gz archive.
@@ -87,10 +87,11 @@ mv "$tmp_dir/summon" "$download_path/summon"
 rm -rf "$tmp_dir"
 
 # -------- summon-conjur --------
+# summon providers must live under Providers/ according to summon runtime lookup rules
 echo "Downloading summon-conjur ${summon_conjur_version}"
 tmp_dir="$(mktemp -d)"
 curl -fsSL "$summon_conjur_url" | tar -xz -C "$tmp_dir"
-mv "$tmp_dir/summon-conjur" "$download_path/summon-conjur"
+mv "$tmp_dir/summon-conjur" "$download_path/Providers/summon-conjur"
 rm -rf "$tmp_dir"
 
 # -------- conjur-cli --------
@@ -99,10 +100,10 @@ extract_binary_from_tar "$conjur_url" "conjur" "$download_path/conjur"
 
 # -------- Sanity checks --------
 test -f "$download_path/summon" || { echo "summon binary not found" >&2; exit 1; }
-test -f "$download_path/summon-conjur" || { echo "summon-conjur binary not found" >&2; exit 1; }
+test -f "$download_path/Providers/summon-conjur" || { echo "summon-conjur binary not found" >&2; exit 1; }
 test -f "$download_path/conjur" || { echo "conjur binary not found" >&2; exit 1; }
 
 chmod +x \
   "$download_path/summon" \
-  "$download_path/summon-conjur" \
+  "$download_path/Providers/summon-conjur" \
   "$download_path/conjur"
